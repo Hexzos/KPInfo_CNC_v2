@@ -1,0 +1,20 @@
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+
+.git/
+.gitignore
+
+.venv/
+venv/
+.env
+.env.*
+
+# No empaquetar DB local
+data/
+*.sqlite3
+*.db
+
+# Opcional: si docs pesa mucho
+docs/
