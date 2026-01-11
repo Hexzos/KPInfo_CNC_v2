@@ -63,28 +63,6 @@ La versión **v2.0 introduce**:
 
 ---
 
-## Estructura del proyecto
-
-KPInfo_CNC_v2/
-├─ server/
-│ ├─ http/ # Handler, mixins, API GET/POST, rate limit
-│ ├─ services/ # Lógica de negocio
-│ ├─ utils/
-│ ├─ db.py
-│ ├─ server.py
-│ └─ schema.sql
-├─ web/
-│ ├─ assets/
-│ ├─ *.html
-│ └─ favicon.ico
-├─ docs/
-├─ .gitignore
-├─ README.md
-└─ LICENSE
-
-
----
-
 ## Ejecutar en entorno local
 
 ### Requisitos
