@@ -1,5 +1,5 @@
 # server/server.py
-from http.server import HTTPServer
+from http.server import ThreadingHTTPServer
 from pathlib import Path
 
 from server.config import CONFIG
@@ -16,7 +16,7 @@ def main():
     AppHandler.db.init_schema(schema)
     seed_catalogos(AppHandler.db)
 
-    server = HTTPServer((CONFIG.host, CONFIG.port), AppHandler)
+    server = ThreadingHTTPServer((CONFIG.host, CONFIG.port), AppHandler)
 
     print(f"Servidor iniciado en http://{CONFIG.host}:{CONFIG.port}")
     print("Login: POST /api/registro-turno/iniciar (operador/admin)")
