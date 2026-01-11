@@ -7,8 +7,10 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 
 @dataclass(frozen=False)  # permitir rotar claves en runtime si lo necesitas
 class Config:
-    host: str = "127.0.0.1"
-    port: int = 8000
+    class Config:
+    host: str = os.getenv("APP_HOST", "127.0.0.1")
+    port: int = int(os.getenv("APP_PORT", "8000"))
+
     db_path: Path = BASE_DIR / "data" / "cnc.sqlite3"
     schema_path: Path = BASE_DIR / "server" / "schema.sql"
     web_root: Path = BASE_DIR / "web"
