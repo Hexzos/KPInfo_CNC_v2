@@ -1,0 +1,108 @@
+/* web/assets/css/modal-anomalia-detalle.css */
+
+.modal-anomalia-det .modal__card{
+  width: min(920px, calc(100vw - 48px));
+  max-height: calc(100vh - 48px);
+  max-height: calc(100dvh - 48px);
+  overflow: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+.anom-det-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1.2fr;
+  gap: 18px;
+  margin-top: 10px;
+  align-items: start;
+}
+
+.anom-det-col .det-label {
+  font-weight: 700;
+  margin-bottom: 6px;
+}
+
+.det-val {
+  margin: 2px 0;
+}
+
+.anom-det-col--estado {
+  display: grid;
+  gap: 8px;
+  justify-items: start;
+}
+
+.btn--sm {
+  padding: 6px 10px;
+  font-size: 12px;
+}
+
+.anom-det-section {
+  margin-top: 18px;
+}
+
+.det-title {
+  font-weight: 700;
+  margin-bottom: 8px;
+}
+
+.det-text {
+  white-space: pre-wrap;
+  line-height: 1.35;
+}
+
+.anom-det-actions {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-top: 10px;
+}
+
+.anom-det-right {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  min-width: 180px;
+}
+
+@media (max-width: 900px){
+  .anom-det-grid{
+    grid-template-columns: 1fr;
+  }
+
+  .anom-det-right{
+    min-width: 0;
+    width: 100%;
+    justify-content: flex-start;
+    flex-wrap: wrap;
+  }
+
+  .anom-det-actions{
+    flex-wrap: wrap;
+    justify-content: flex-end;
+  }
+}
+
+@media (max-width: 520px){
+  .modal-anomalia-det .modal__card{
+    width: calc(100vw - 24px);
+    max-height: calc(100vh - 24px);
+    max-height: calc(100dvh - 24px);
+  }
+
+  .anom-det-actions{
+    flex-direction: column;
+    align-items: stretch;
+    gap: 10px;
+  }
+
+  .anom-det-right{
+    width: 100%;
+    justify-content: stretch;
+    gap: 10px;
+  }
+
+  .anom-det-right .btn{
+    width: 100%;
+  }
+}

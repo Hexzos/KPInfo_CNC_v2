@@ -1,0 +1,58 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>KPInfo CNC - Restablecer contraseña</title>
+  <link rel="stylesheet" href="/assets/css/styles.css" />
+  <link rel="icon" href="/favicon.ico">
+</head>
+
+<body class="page-login">
+  <header class="login-topbar">
+    <div class="login-topbar__inner">
+      <div class="login-brand">
+        <div class="login-brand__title">KPInfo</div>
+        <div class="login-brand__subtitle">Restablecer contraseña</div>
+      </div>
+    </div>
+  </header>
+
+  <main class="login-wrap">
+    <section class="login-panel">
+      <form id="resetForm" class="login-form" autocomplete="off">
+        <div class="field">
+          <label for="identificador">Email o username *</label>
+          <input id="identificador" type="text" autocomplete="username" />
+          <div class="help muted" style="font-size:12px;">
+            Si el usuario existe y está activo, se registrará una solicitud que un administrador deberá aprobar.
+          </div>
+        </div>
+
+        <div class="field">
+          <label for="password">Nueva contraseña (mín. 8) *</label>
+          <input id="password" type="password" autocomplete="new-password" />
+        </div>
+
+        <div class="field">
+          <label for="password2">Confirmar nueva contraseña *</label>
+          <input id="password2" type="password" autocomplete="new-password" />
+        </div>
+
+        <p id="resetMsg" class="msg" aria-live="polite"></p>
+
+        <button id="btnReset" class="login-btn" type="submit">
+          Enviar solicitud<br><span>(requiere aprobación)</span>
+        </button>
+
+        <p class="login-note">
+          <a href="/index.html" class="muted" style="text-decoration: underline;">Volver</a>
+        </p>
+      </form>
+    </section>
+  </main>
+
+  <script src="/assets/js/core.js"></script>
+  <script src="/assets/js/reset.js"></script>
+</body>
+</html>
