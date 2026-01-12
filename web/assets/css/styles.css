@@ -596,6 +596,31 @@ body.page-login{
     max-width: 360px;
     justify-self: center;
   }
+
+  .sidebar{
+    position: fixed;
+    top: 0;
+    left: 0;
+    height: 100vh;
+    width: min(86vw, 280px);
+    max-width: 280px;
+
+    transform: translateX(-102%);
+    transition: transform .18s ease;
+    z-index: 950;
+
+    /* permitir scroll vertical dentro del menú */
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+
+    /* (Opcional recomendado) evita que el contenido quede pegado abajo */
+    padding-bottom: 18px;
+  }
+
+  .sidebar__nav{
+    min-height: 0;
+  }
+
 }
 
 @media (max-width: 420px){
