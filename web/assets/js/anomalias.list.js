@@ -16,6 +16,11 @@
     if (el) el.textContent = txt || "";
   }
 
+  // ✅ Nuevo: helper de fecha para UI local (DD-MM-YYYY)
+  function humanDate(v) {
+    return (window.KP?.utils?.formatDateDMY && window.KP.utils.formatDateDMY(v)) || (v || "");
+  }
+
   function render(items) {
     const list = document.getElementById("cards");
     const tpl = document.getElementById("anomaliaTpl");
@@ -53,7 +58,10 @@
       }
 
       if (turnoEl) turnoEl.textContent = a.turno_nombre || "";
-      if (fechaEl) fechaEl.textContent = a.fecha_registro || "";
+
+      // ✅ Aquí el cambio: fecha en DD-MM-YYYY
+      if (fechaEl) fechaEl.textContent = humanDate(a.fecha_registro || "");
+
       if (maqEl) maqEl.textContent = a.maquina_nombre || "";
 
       const est = a.estado || "en_revision";
@@ -109,7 +117,7 @@
         qs.set("estado", "todos");
       }
     } else {
-      const backendEstado = (estadoRaw === "general") ? "todos" : estadoRaw;
+      const backendEstado = estadoRaw === "general" ? "todos" : estadoRaw;
       qs.set("estado", backendEstado || "todos");
     }
 

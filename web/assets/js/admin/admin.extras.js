@@ -45,6 +45,23 @@
   }
 
   // =========================
+  // UI: bloquear copiar/pegar en inputs de clave (extras)
+  // =========================
+  function bindNoCopyPasteExtrasKeyInputs() {
+    const bind = window.KP?.ui?.bindNoCopyPaste;
+    if (typeof bind !== "function") return;
+
+    const ids = ["extrasKeyCurrent", "extrasKeyNewModal", "extrasKeyNewConfirm"];
+    ids.forEach((id) => {
+      const el = document.getElementById(id);
+      if (!el) return;
+      if (el.dataset.nocp === "1") return;
+      el.dataset.nocp = "1";
+      bind(el);
+    });
+  }
+
+  // =========================
   // UI: Badge + mensaje superior
   // =========================
   function paintEstadoBadge() {
@@ -353,4 +370,12 @@
   window.KP.adminExtras.doPurgeAnomaliasAll = doPurgeAnomaliasAll;
 
   window.KP.adminExtras.doRotateExtrasKey = doRotateExtrasKey;
+
+  // Auto-bind (una vez) para bloquear copiar/pegar en inputs de claves de extras
+  // Se ejecuta cuando se carga el archivo; si el modal está en el DOM, queda listo.
+  try {
+    bindNoCopyPasteExtrasKeyInputs();
+  } catch (e) {
+    // silencioso
+  }
 })();

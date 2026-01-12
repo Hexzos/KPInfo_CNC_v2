@@ -16,6 +16,11 @@
     <aside class="sidebar">
       <div class="sidebar__brand">
         <div class="sidebar__title">KPInfo</div>
+
+        <div id="sidebarMeta" class="sidebar__meta" hidden>
+          <div id="sidebarMetaName" class="sidebar__meta-name"></div>
+          <div id="sidebarMetaDate" class="sidebar__meta-date"></div>
+        </div>
       </div>
 
       <nav class="sidebar__nav" aria-label="Navegación">
@@ -248,13 +253,13 @@
     // Marca activo en sidebar
     window.KPINIT && window.KPINIT.initNavActive && window.KPINIT.initNavActive();
 
-    
+    window.KPINIT && window.KPINIT.initSidebarMeta && window.KPINIT.initSidebarMeta();
     window.KP && window.KP.nav && window.KP.nav.initAll && window.KP.nav.initAll();
 // Extras + cierre (si existen)
     window.KP && window.KP.extras && window.KP.extras.initAll && window.KP.extras.initAll();
     window.KP && window.KP.cierre && window.KP.cierre.initAll && window.KP.cierre.initAll();
 
-    // ✅ Esto es lo importante:
+    
     window.KP && window.KP.anomalias && window.KP.anomalias.initAll && window.KP.anomalias.initAll();
   </script>
 

@@ -1,3 +1,4 @@
+// web/assets/js/pedidos.modal.detalle.js
 (function () {
   window.KP = window.KP || {};
   window.KP.pedidos = window.KP.pedidos || {};
@@ -11,6 +12,11 @@
 
   function isExtrasEnabled() {
     return !!(window.KP?.Session?.isExtrasEnabled && window.KP.Session.isExtrasEnabled());
+  }
+
+  // ✅ Nuevo: helper de fecha para UI local (DD-MM-YYYY)
+  function humanDate(v) {
+    return (window.KP?.utils?.formatDateDMY && window.KP.utils.formatDateDMY(v)) || (v || "—");
   }
 
   window.KP.pedidos.initPedidoDetalleModal = function () {
@@ -99,10 +105,22 @@
     }
 
     function lockAllToRO() {
-      if (inpUlt) { inpUlt.disabled = true; inpUlt.hidden = true; }
-      if (inpCortes) { inpCortes.disabled = true; inpCortes.hidden = true; }
-      if (selEstado) { selEstado.disabled = true; selEstado.hidden = true; }
-      if (inpPlanchas) { inpPlanchas.disabled = true; inpPlanchas.hidden = true; }
+      if (inpUlt) {
+        inpUlt.disabled = true;
+        inpUlt.hidden = true;
+      }
+      if (inpCortes) {
+        inpCortes.disabled = true;
+        inpCortes.hidden = true;
+      }
+      if (selEstado) {
+        selEstado.disabled = true;
+        selEstado.hidden = true;
+      }
+      if (inpPlanchas) {
+        inpPlanchas.disabled = true;
+        inpPlanchas.hidden = true;
+      }
 
       if (roUlt) roUlt.hidden = false;
       if (roCortes) roCortes.hidden = false;
@@ -200,10 +218,25 @@
     function fill(data) {
       ensureExtrasPlanchasUI();
 
+      // ✅ Fecha (y cualquier campo date/iso) formateado a DD-MM-YYYY
       modal.querySelectorAll("[data-det]").forEach((el) => {
         const k = el.getAttribute("data-det");
         const v = data?.[k];
-        el.textContent = (v === null || v === undefined || v === "") ? "—" : String(v);
+
+        if (v === null || v === undefined || v === "") {
+          el.textContent = "—";
+          return;
+        }
+
+        // Heurística: si el campo se llama "fecha*" o contiene una fecha ISO, lo formateamos
+        const key = String(k || "").toLowerCase();
+        const asStr = String(v);
+
+        const looksLikeISODate = /^\d{4}-\d{2}-\d{2}/.test(asStr);
+        const isFechaKey = key.startsWith("fecha") || key.includes("_fecha") || key.includes("fecha_");
+
+        if (isFechaKey || looksLikeISODate) el.textContent = humanDate(asStr);
+        else el.textContent = asStr;
       });
 
       const planchas = Number(data?.planchas_asignadas ?? 0);
@@ -230,7 +263,7 @@
       if (inpCortes) inpCortes.value = String(cortes);
       if (selEstado) selEstado.value = estado;
 
-      const lockedByEstado = (estado === "completado" || estado === "cancelado");
+      const lockedByEstado = estado === "completado" || estado === "cancelado";
       applyUIState(lockedByEstado);
 
       lockAllToRO();

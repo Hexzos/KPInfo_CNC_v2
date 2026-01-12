@@ -93,11 +93,30 @@
   .export-grid{
     grid-template-columns: 1fr;
   }
+
   .export-field input{
     max-width: 100%;
   }
+
   .export-actions{
     flex-direction: column;
     align-items: stretch;
+  }
+
+  /* =========================
+     FIX iOS/SE: permitir ver mensaje final
+     - Scroll SOLO dentro de la tarjeta
+     - Evita tocar body/main/content global
+  ========================= */
+  .export-card{
+    /* 100dvh es más fiable que 100vh en Safari móvil */
+    max-height: calc(100dvh - 170px); /* ajusta si tu topbar cambia */
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  /* Aire para que el último texto no quede pegado abajo */
+  .export-note{
+    padding-bottom: 12px;
   }
 }

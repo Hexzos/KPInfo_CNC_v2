@@ -10,6 +10,11 @@
     el.textContent = text || "";
   }
 
+  // ✅ Nuevo: helper de fecha para UI local (DD-MM-YYYY)
+  function humanDate(v) {
+    return (window.KP?.utils?.formatDateDMY && window.KP.utils.formatDateDMY(v)) || (v || "—");
+  }
+
   function closeWithOverlayRule() {
     const overlay = document.getElementById("overlay");
     const modal = document.getElementById("modalAnomalia");
@@ -95,8 +100,9 @@
       overlay.hidden = false;
       modal.hidden = false;
 
-      // Prefill fecha (readonly)
-      if (f.fecha) f.fecha.textContent = window.KP.utils.todayISO();
+      // ✅ Prefill fecha (readonly) en formato local DD-MM-YYYY
+      const isoToday = window.KP.utils.todayISO();
+      if (f.fecha) f.fecha.textContent = humanDate(isoToday);
 
       setMsg("Cargando catálogos…");
       window.KP.ui.setErrors({});
@@ -126,7 +132,7 @@
         maquina_id: Number(f.maq?.value || 0) || null,
         titulo: (f.tit?.value || "").trim(),
         descripcion: (f.desc?.value || "").trim(),
-        // El backend ya tiene default, pero lo mandamos por consistencia UI
+        // ✅ Backend: se mantiene YYYY-MM-DD (no tocar)
         fecha_registro: window.KP.utils.todayISO(),
       };
 

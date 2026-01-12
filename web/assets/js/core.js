@@ -214,6 +214,36 @@
       return `${yyyy}-${mm}-${dd}`;
     };
 
+  window.KP.utils.todayHumanCL =
+    window.KP.utils.todayHumanCL ||
+    function () {
+      // Fecha local del dispositivo (suficiente para UI)
+      const d = new Date();
+      // Ej: 11-01-2026
+      const dd = String(d.getDate()).padStart(2, "0");
+      const mm = String(d.getMonth() + 1).padStart(2, "0");
+      const yyyy = d.getFullYear();
+      return `${dd}-${mm}-${yyyy}`;
+    };
+
+  // ✅ Nuevo: formateo robusto de fechas (YYYY-MM-DD / ISO) → DD-MM-YYYY
+  window.KP.utils.formatDateDMY =
+    window.KP.utils.formatDateDMY ||
+    function (isoLike) {
+      if (!isoLike) return "";
+      const s = String(isoLike).trim();
+
+      // Acepta "YYYY-MM-DD", "YYYY-MM-DDTHH:mm:ss", "YYYY-MM-DD HH:mm:ss"
+      const base = s.slice(0, 10);
+      const parts = base.split("-");
+      if (parts.length !== 3) return s; // fallback
+
+      const [yyyy, mm, dd] = parts;
+      if (!yyyy || !mm || !dd) return s;
+
+      return `${dd}-${mm}-${yyyy}`;
+    };
+
   // =========================
   // UI helpers
   // =========================
@@ -235,6 +265,34 @@
       if (err && err.name === "KPError" && err.fields) {
         window.KP.ui.setErrors(err.fields);
       }
+    };
+
+  // ✅ Nuevo: bloquear copiar/pegar/cortar/drop en inputs (ej: claves)
+  window.KP.ui.bindNoCopyPaste =
+    window.KP.ui.bindNoCopyPaste ||
+    function (inputEl) {
+      if (!inputEl) return;
+
+      const block = (ev) => {
+        ev.preventDefault();
+        ev.stopPropagation();
+      };
+
+      inputEl.addEventListener("paste", block);
+      inputEl.addEventListener("copy", block);
+      inputEl.addEventListener("cut", block);
+      inputEl.addEventListener("drop", block);
+
+      // Evita menú contextual (desktop) y reduce “pegado” por long-press (móvil)
+      inputEl.addEventListener("contextmenu", block);
+
+      // Bloquea atajos Ctrl/Cmd + C/V/X
+      inputEl.addEventListener("keydown", (ev) => {
+        const k = String(ev.key || "").toLowerCase();
+        if ((ev.ctrlKey || ev.metaKey) && (k === "c" || k === "v" || k === "x")) {
+          ev.preventDefault();
+        }
+      });
     };
 
   // =========================
@@ -301,6 +359,29 @@
         const isActive = !!href && path.endsWith(href);
         a.classList.toggle("navlink--active", isActive);
       });
+    };
+
+  window.KPINIT.initSidebarMeta =
+    window.KPINIT.initSidebarMeta ||
+    function () {
+      const wrap = document.getElementById("sidebarMeta");
+      const elName = document.getElementById("sidebarMetaName");
+      const elDate = document.getElementById("sidebarMetaDate");
+      if (!wrap || !elName || !elDate) return;
+
+      const s = window.KP.Session.getRegistroTurno && window.KP.Session.getRegistroTurno();
+      const nombre = String(s?.operador_nombre || "").trim();
+      const apellido = String(s?.operador_apellido || "").trim();
+
+      // Condición estricta: requiere nombre + apellido
+      if (!nombre || !apellido) {
+        wrap.hidden = true;
+        return;
+      }
+
+      elName.textContent = `${nombre} ${apellido}`;
+      elDate.textContent = window.KP.utils.todayHumanCL();
+      wrap.hidden = false;
     };
 
   window.KPINIT.initExtras =

@@ -108,7 +108,9 @@
     overlay.hidden = true;
     modal.hidden = true;
 
-    if (fechaEl) fechaEl.textContent = window.KP.utils.todayISO();
+    // ✅ UI en formato local
+    if (fechaEl) fechaEl.textContent = window.KP.utils.todayHumanCL();
+
     const KEEP_MODAL_OPEN_AFTER_CREATE = true;
 
     function onKey(ev) {
@@ -131,7 +133,7 @@
       overlay.hidden = true;
 
       if (form) form.reset();
-      if (fechaEl) fechaEl.textContent = window.KP.utils.todayISO();
+      if (fechaEl) fechaEl.textContent = window.KP.utils.todayHumanCL();
       if (variSel) variSel.innerHTML = `<option value="" disabled selected>Seleccionar propiedades extra</option>`;
       document.removeEventListener("keydown", onKey);
     }
@@ -165,12 +167,11 @@
       }
     }
 
-    // ✅ NUEVO: variaciones desde tabla puente
+    // ✅ variaciones desde tabla puente
     function renderVariacionesForTipo(tipoPlanchaId) {
       const map = catalogos?.tipo_plancha_variaciones || {};
       const items = map[String(tipoPlanchaId)] || map[tipoPlanchaId] || [];
 
-      // fallback mínimo: siempre permitir "Otro"
       const list = Array.isArray(items) ? items.slice() : [];
 
       if (variSel) {

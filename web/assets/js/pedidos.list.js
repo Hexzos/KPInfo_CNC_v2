@@ -34,6 +34,25 @@
     }
   }
 
+  // ---------------------------------
+  // Fecha UI (DD-MM-YYYY) con fallback
+  // ---------------------------------
+  function formatFechaUI(value) {
+    const v = (value ?? "").toString().trim();
+    if (!v) return "";
+
+    const fmt = window.KP?.utils?.formatDateDMY;
+    if (typeof fmt === "function") return fmt(v);
+
+    // fallback simple por si no existe en core.js
+    // soporta "YYYY-MM-DD" y también "YYYY-MM-DD HH:MM:SS"
+    const base = v.split("T")[0].split(" ")[0];
+    const m = base.match(/^(\d{4})-(\d{2})-(\d{2})$/);
+    if (!m) return v;
+    const yyyy = m[1], mm = m[2], dd = m[3];
+    return `${dd}-${mm}-${yyyy}`;
+  }
+
   async function loadPedidos({ lista = "general", q = "" } = {}) {
     const qs = new URLSearchParams();
 
@@ -88,7 +107,7 @@
       if (codeEl) codeEl.textContent = p.codigo_producto || "";
       if (descEl) descEl.textContent = p.descripcion_producto || "";
       if (turnoEl) turnoEl.textContent = p.turno_nombre || "";
-      if (fechaEl) fechaEl.textContent = p.fecha_registro || "";
+      if (fechaEl) fechaEl.textContent = formatFechaUI(p.fecha_registro);
       if (maqEl) maqEl.textContent = p.maquina_asignada || "";
 
       const estado = p.estado || "en_proceso";
