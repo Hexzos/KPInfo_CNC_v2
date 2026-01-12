@@ -17,3 +17,10 @@ cnc.sqlite3
 # Exportaciones
 *.csv
 exports/
+
+# Deploy
+# Fly / Docker local
+fly.toml
+Dockerfile
+.dockerignore
+.fly/
