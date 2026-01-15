@@ -15,11 +15,6 @@
     return !!(window.KP?.Session?.isExtrasEnabled && window.KP.Session.isExtrasEnabled());
   }
 
-  // ✅ Nuevo: helper de fecha para UI local (DD-MM-YYYY)
-  function humanDate(v) {
-    return (window.KP?.utils?.formatDateDMY && window.KP.utils.formatDateDMY(v)) || (v || "—");
-  }
-
   window.KP.anomalias.initDetalleModal = function () {
     const overlay = document.getElementById("overlay");
     const modal = document.getElementById("modalAnomaliaDetalle");
@@ -38,6 +33,16 @@
 
     const btnArchivar = document.getElementById("btnArchivarAnomalia");
     const btnRestaurar = document.getElementById("btnRestaurarAnomalia");
+
+    // ✅ NUEVO: edición extras de título + descripción
+    const roTitEl = modal?.querySelector?.('[data-det="titulo"]') || null;
+    const roDescEl = modal?.querySelector?.('[data-det="descripcion"]') || null;
+
+    let inpTit = modal?.querySelector?.("#detTituloAnomalia") || null;
+    let taDesc = modal?.querySelector?.("#detDescAnomalia") || null;
+
+    let btnModTit = modal?.querySelector?.("#btnModTituloAnomalia") || null;
+    let btnModDesc = modal?.querySelector?.("#btnModDescAnomalia") || null;
 
     if (!overlay || !modal) return;
     if (modal.dataset.inited === "1") return;
@@ -75,6 +80,85 @@
       document.removeEventListener("keydown", onKey);
     }
 
+    function ensureExtrasTextUI() {
+      if (!isExtrasEnabled()) return;
+
+      // Título
+      if (roTitEl) {
+        if (!inpTit) {
+          inpTit = document.createElement("input");
+          inpTit.id = "detTituloAnomalia";
+          inpTit.className = "det-input";
+          inpTit.type = "text";
+          inpTit.disabled = true;
+          inpTit.hidden = true;
+          roTitEl.insertAdjacentElement("afterend", inpTit);
+        }
+
+        if (!btnModTit) {
+          btnModTit = document.createElement("button");
+          btnModTit.id = "btnModTituloAnomalia";
+          btnModTit.className = "btn btn--light btn--xs";
+          btnModTit.type = "button";
+          btnModTit.textContent = "Modificar";
+          inpTit.insertAdjacentElement("afterend", btnModTit);
+
+          btnModTit.addEventListener("click", () => {
+            if (isArchived) return;
+            const extras = isExtrasEnabled();
+            if (!extras) return;
+
+            roTitEl.hidden = true;
+            inpTit.hidden = false;
+            inpTit.disabled = false;
+            inpTit.focus();
+
+            if (btnGuardar) btnGuardar.disabled = false;
+            setMessage("");
+          });
+        }
+      }
+
+      // Descripción
+      if (roDescEl) {
+        if (!taDesc) {
+          taDesc = document.createElement("textarea");
+          taDesc.id = "detDescAnomalia";
+          taDesc.className = "det-input";
+          taDesc.rows = 4;
+          taDesc.disabled = true;
+          taDesc.hidden = true;
+          roDescEl.insertAdjacentElement("afterend", taDesc);
+        }
+
+        if (!btnModDesc) {
+          btnModDesc = document.createElement("button");
+          btnModDesc.id = "btnModDescAnomalia";
+          btnModDesc.className = "btn btn--light btn--xs";
+          btnModDesc.type = "button";
+          btnModDesc.textContent = "Modificar";
+          taDesc.insertAdjacentElement("afterend", btnModDesc);
+
+          btnModDesc.addEventListener("click", () => {
+            if (isArchived) return;
+            const extras = isExtrasEnabled();
+            if (!extras) return;
+
+            roDescEl.hidden = true;
+            taDesc.hidden = false;
+            taDesc.disabled = false;
+            taDesc.focus();
+
+            if (btnGuardar) btnGuardar.disabled = false;
+            setMessage("");
+          });
+        }
+      }
+
+      if (btnModTit) btnModTit.hidden = false;
+      if (btnModDesc) btnModDesc.hidden = false;
+    }
+
     function forceReadOnlyUI() {
       if (selEstado) {
         selEstado.disabled = true;
@@ -87,6 +171,18 @@
         taSol.hidden = true;
       }
       if (roSol) roSol.hidden = false;
+
+      // ✅ nuevo: readonly título/desc
+      if (inpTit) {
+        inpTit.disabled = true;
+        inpTit.hidden = true;
+      }
+      if (taDesc) {
+        taDesc.disabled = true;
+        taDesc.hidden = true;
+      }
+      if (roTitEl) roTitEl.hidden = false;
+      if (roDescEl) roDescEl.hidden = false;
 
       if (btnGuardar) btnGuardar.disabled = true;
     }
@@ -113,6 +209,9 @@
       if (btnModEstado) btnModEstado.hidden = true;
       if (btnAddSol) btnAddSol.hidden = true;
 
+      if (btnModTit) btnModTit.hidden = true;
+      if (btnModDesc) btnModDesc.hidden = true;
+
       if (btnGuardar) {
         btnGuardar.hidden = true;
         btnGuardar.disabled = true;
@@ -128,6 +227,9 @@
       if (btnModEstado) btnModEstado.hidden = true;
       if (btnAddSol) btnAddSol.hidden = true;
 
+      if (btnModTit) btnModTit.hidden = true;
+      if (btnModDesc) btnModDesc.hidden = true;
+
       if (btnGuardar) {
         btnGuardar.hidden = true;
         btnGuardar.disabled = true;
@@ -142,6 +244,11 @@
 
       if (btnModEstado) btnModEstado.hidden = false;
       if (btnAddSol) btnAddSol.hidden = false;
+
+      // ✅ extras habilita modificar texto
+      const extras = isExtrasEnabled();
+      if (btnModTit) btnModTit.hidden = !extras;
+      if (btnModDesc) btnModDesc.hidden = !extras;
 
       if (btnGuardar) {
         btnGuardar.hidden = false;
@@ -193,24 +300,12 @@
     function fill(data) {
       setMessage("");
 
-      // ✅ Fecha (y cualquier campo date/iso) formateado a DD-MM-YYYY
+      ensureExtrasTextUI();
+
       modal.querySelectorAll("[data-det]").forEach((el) => {
         const k = el.getAttribute("data-det");
         const v = data?.[k];
-
-        if (v === null || v === undefined || v === "") {
-          el.textContent = "—";
-          return;
-        }
-
-        const key = String(k || "").toLowerCase();
-        const asStr = String(v);
-
-        const looksLikeISODate = /^\d{4}-\d{2}-\d{2}/.test(asStr);
-        const isFechaKey = key.startsWith("fecha") || key.includes("_fecha") || key.includes("fecha_");
-
-        if (isFechaKey || looksLikeISODate) el.textContent = humanDate(asStr);
-        else el.textContent = asStr;
+        el.textContent = (v === null || v === undefined || v === "") ? "—" : String(v);
       });
 
       actualEstado = (data?.estado || "en_revision").trim();
@@ -225,6 +320,12 @@
       const sol = String(data?.solucion || "").trim();
       if (roSol) roSol.textContent = sol ? sol : "—";
       if (taSol) taSol.value = sol;
+
+      // ✅ prefill título/desc
+      const tit = String(data?.titulo || "").trim();
+      const desc = String(data?.descripcion || "").trim();
+      if (inpTit) inpTit.value = tit;
+      if (taDesc) taDesc.value = desc;
 
       if (isArchived) {
         applyArchivedUI();
@@ -254,6 +355,10 @@
       const estado = (selEstado?.value || "en_revision").trim();
       const solucion = String(taSol?.value || "").trim();
 
+      // ✅ extras: título/desc
+      const titulo = extras && inpTit ? String(inpTit.value || "").trim() : null;
+      const descripcion = extras && taDesc ? String(taDesc.value || "").trim() : null;
+
       if (estado === "solucionado" && solucion.length < 10) {
         return setMessage("Para marcar como solucionado, ingrese una solución (mínimo 10 caracteres).", true);
       }
@@ -261,12 +366,23 @@
         return setMessage("En revisión no debe registrar solución.", true);
       }
 
+      if (extras && inpTit) {
+        if (!titulo || titulo.length < 2) return setMessage("Título inválido (mínimo 2).", true);
+      }
+      if (extras && taDesc) {
+        if (!descripcion || descripcion.length < 10) return setMessage("Descripción inválida (mínimo 10).", true);
+      }
+
       setMessage("Guardando…");
+
+      const body = { estado, solucion: solucion || null };
+      if (extras && inpTit) body.titulo = titulo;
+      if (extras && taDesc) body.descripcion = descripcion;
 
       try {
         const res = await window.KP.API.fetchJSON(`/api/anomalias/${actualId}/actualizar`, {
           method: "POST",
-          body: JSON.stringify({ estado, solucion: solucion || null }),
+          body: JSON.stringify(body),
         });
 
         fill(res.data || {});

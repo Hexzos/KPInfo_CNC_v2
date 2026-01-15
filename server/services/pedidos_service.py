@@ -250,6 +250,7 @@ class PedidosService:
     # - ultima_plancha_trabajada
     # - cortes_totales
     # - estado (incluso si estaba completado/cancelado; permite "reabrir")
+    # - ✅ NUEVO: codigo_producto, descripcion_producto
     #
     # Mantiene:
     # - ARCHIVED bloquea
@@ -268,7 +269,9 @@ class PedidosService:
               ultima_plancha_trabajada,
               cortes_totales,
               turno_id,
-              fecha_registro
+              fecha_registro,
+              codigo_producto,
+              descripcion_producto
             FROM pedido
             WHERE id = ?;
             """,
@@ -285,6 +288,9 @@ class PedidosService:
         ultima_actual = int(row.get("ultima_plancha_trabajada") or 0)
         cortes_actual = int(row.get("cortes_totales") or 0)
         estado_actual = (row.get("estado") or "en_proceso").strip()
+
+        codigo_actual = (row.get("codigo_producto") or "").strip()
+        desc_actual = (row.get("descripcion_producto") or "").strip()
 
         # planchas_asignadas (si no viene, mantener)
         if dto.get("planchas_asignadas") is None:
@@ -313,7 +319,7 @@ class PedidosService:
             except Exception:
                 raise ValueError("CORTES_NEG")
 
-        # Validaciones
+        # Validaciones base
         if planchas_nuevas <= 0:
             raise ValueError("PLANCHAS_INVALID")
 
@@ -333,22 +339,58 @@ class PedidosService:
         if estado_nuevo == "completado" and ultima_nueva < planchas_nuevas:
             raise ValueError("NO_COMPLETABLE")
 
+        # ✅ NUEVO: código/descr solo si vienen en el request
+        codigo_nuevo = None
+        if "codigo_producto" in dto:
+            codigo_nuevo = (dto.get("codigo_producto") or "").strip()
+            if len(codigo_nuevo) < 1:
+                raise ValueError("CODIGO_INVALIDO")
+
+        desc_nueva = None
+        if "descripcion_producto" in dto:
+            desc_nueva = (dto.get("descripcion_producto") or "").strip()
+            if len(desc_nueva) < 10:
+                raise ValueError("DESC_INVALIDA")
+
         # Delta (solo incrementos)
         delta_planchas = max(0, ultima_nueva - ultima_actual)
 
-        # Persistir
+        # ✅ UPDATE dinámico: solo lo que corresponde (y evita pisar si no llegó)
+        updates = [
+            "planchas_asignadas = ?",
+            "ultima_plancha_trabajada = ?",
+            "cortes_totales = ?",
+            "estado = ?",
+            "modificado_en = datetime('now')",
+        ]
+        params: List[Any] = [planchas_nuevas, ultima_nueva, cortes, estado_nuevo]
+
+        if codigo_nuevo is not None and codigo_nuevo != codigo_actual:
+            updates.insert(0, "codigo_producto = ?")
+            params.insert(0, codigo_nuevo)
+
+        if desc_nueva is not None and desc_nueva != desc_actual:
+            # Ojo: si insertamos al inicio, mantenemos orden consistente
+            # Lo agregamos antes de modificado_en
+            idx = len(updates) - 1  # antes de modificado_en
+            updates.insert(idx, "descripcion_producto = ?")
+
+            # params debe ir en el mismo orden que updates (sin contar modificado_en)
+            # Como modificado_en no tiene placeholder, insertamos antes del final lógico.
+            # Aquí: params actualmente contiene [ (codigo?) , planchas, ultima, cortes, estado ]
+            # Insertamos descripción al final de placeholders.
+            params.append(desc_nueva)
+
+        params.append(pedido_id)
+
         self.db.execute(
-            """
+            f"""
             UPDATE pedido
             SET
-              planchas_asignadas = ?,
-              ultima_plancha_trabajada = ?,
-              cortes_totales = ?,
-              estado = ?,
-              modificado_en = datetime('now')
+              {", ".join(updates)}
             WHERE id = ?;
             """,
-            (planchas_nuevas, ultima_nueva, cortes, estado_nuevo, pedido_id),
+            tuple(params),
         )
 
         # Log (solo si delta > 0)

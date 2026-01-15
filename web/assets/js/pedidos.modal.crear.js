@@ -111,7 +111,7 @@
     // ✅ UI en formato local
     if (fechaEl) fechaEl.textContent = window.KP.utils.todayHumanCL();
 
-    const KEEP_MODAL_OPEN_AFTER_CREATE = true;
+    const KEEP_MODAL_OPEN_AFTER_CREATE = false;
 
     function onKey(ev) {
       if (ev.key === "Escape") close();

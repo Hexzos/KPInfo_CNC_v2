@@ -14,7 +14,7 @@
     return !!(window.KP?.Session?.isExtrasEnabled && window.KP.Session.isExtrasEnabled());
   }
 
-  // ✅ Nuevo: helper de fecha para UI local (DD-MM-YYYY)
+  // ✅ helper fecha UI (DD-MM-YYYY)
   function humanDate(v) {
     return (window.KP?.utils?.formatDateDMY && window.KP.utils.formatDateDMY(v)) || (v || "—");
   }
@@ -48,6 +48,16 @@
     let inpPlanchas = modal.querySelector("#detPlanchasAsignadas");
     let btnModPlanchas = modal.querySelector("#btnModPlanchasAsignadas");
 
+    // ✅ NUEVO: edición extras de código + descripción
+    const roCodigoEl = modal.querySelector('[data-det="codigo_producto"]');
+    const roDescEl = modal.querySelector('[data-det="descripcion_producto"]');
+
+    let inpCodigo = modal.querySelector("#detCodigoProducto");
+    let taDesc = modal.querySelector("#detDescripcionProducto");
+
+    let btnModCodigo = modal.querySelector("#btnModCodigoProducto");
+    let btnModDesc = modal.querySelector("#btnModDescripcionProducto");
+
     if (modal.dataset.inited === "1") return;
     modal.dataset.inited = "1";
 
@@ -65,6 +75,9 @@
       msg.textContent = text || "";
     }
 
+    // =========================
+    // ✅ Extras: UI edición planchas
+    // =========================
     function ensureExtrasPlanchasUI() {
       if (!isExtrasEnabled() || !roPlanchasEl) return;
 
@@ -104,6 +117,87 @@
       }
     }
 
+    // =========================
+    // ✅ NUEVO: Extras UI edición código + descripción
+    // =========================
+    function ensureExtrasTextFieldsUI() {
+      if (!isExtrasEnabled()) return;
+
+      // Código producto
+      if (roCodigoEl) {
+        if (!inpCodigo) {
+          inpCodigo = document.createElement("input");
+          inpCodigo.id = "detCodigoProducto";
+          inpCodigo.className = "det-input";
+          inpCodigo.type = "text";
+          inpCodigo.disabled = true;
+          inpCodigo.hidden = true;
+          roCodigoEl.insertAdjacentElement("afterend", inpCodigo);
+        }
+
+        if (!btnModCodigo) {
+          btnModCodigo = document.createElement("button");
+          btnModCodigo.id = "btnModCodigoProducto";
+          btnModCodigo.className = "btn btn--light btn--xs";
+          btnModCodigo.type = "button";
+          btnModCodigo.textContent = "Modificar";
+          inpCodigo.insertAdjacentElement("afterend", btnModCodigo);
+
+          btnModCodigo.addEventListener("click", () => {
+            if (isArchived) return;
+            if (isLocked) return;
+            if (!isExtrasEnabled()) return;
+
+            roCodigoEl.hidden = true;
+            inpCodigo.hidden = false;
+            inpCodigo.disabled = false;
+            inpCodigo.focus();
+
+            if (btnGuardar) btnGuardar.disabled = false;
+          });
+        }
+      }
+
+      // Descripción producto
+      if (roDescEl) {
+        if (!taDesc) {
+          taDesc = document.createElement("textarea");
+          taDesc.id = "detDescripcionProducto";
+          taDesc.className = "det-input"; // reutiliza estilo base
+          taDesc.rows = 4;
+          taDesc.disabled = true;
+          taDesc.hidden = true;
+          roDescEl.insertAdjacentElement("afterend", taDesc);
+        }
+
+        if (!btnModDesc) {
+          btnModDesc = document.createElement("button");
+          btnModDesc.id = "btnModDescripcionProducto";
+          btnModDesc.className = "btn btn--light btn--xs";
+          btnModDesc.type = "button";
+          btnModDesc.textContent = "Modificar";
+          taDesc.insertAdjacentElement("afterend", btnModDesc);
+
+          btnModDesc.addEventListener("click", () => {
+            if (isArchived) return;
+            if (isLocked) return;
+            if (!isExtrasEnabled()) return;
+
+            roDescEl.hidden = true;
+            taDesc.hidden = false;
+            taDesc.disabled = false;
+            taDesc.focus();
+
+            if (btnGuardar) btnGuardar.disabled = false;
+          });
+        }
+      }
+
+      // Visibilidad de botones (solo extras)
+      if (btnModCodigo) btnModCodigo.hidden = false;
+      if (btnModDesc) btnModDesc.hidden = false;
+    }
+
     function lockAllToRO() {
       if (inpUlt) {
         inpUlt.disabled = true;
@@ -122,10 +216,23 @@
         inpPlanchas.hidden = true;
       }
 
+      // ✅ nuevo: lock texto extras
+      if (inpCodigo) {
+        inpCodigo.disabled = true;
+        inpCodigo.hidden = true;
+      }
+      if (taDesc) {
+        taDesc.disabled = true;
+        taDesc.hidden = true;
+      }
+
       if (roUlt) roUlt.hidden = false;
       if (roCortes) roCortes.hidden = false;
       if (roEstado) roEstado.hidden = false;
       if (roPlanchasEl) roPlanchasEl.hidden = false;
+
+      if (roCodigoEl) roCodigoEl.hidden = false;
+      if (roDescEl) roDescEl.hidden = false;
 
       if (btnGuardar) btnGuardar.disabled = true;
     }
@@ -135,6 +242,8 @@
       if (btnSumarCorte) btnSumarCorte.hidden = true;
       if (btnModEstado) btnModEstado.hidden = true;
       if (btnModPlanchas) btnModPlanchas.hidden = true;
+      if (btnModCodigo) btnModCodigo.hidden = true;
+      if (btnModDesc) btnModDesc.hidden = true;
       if (btnGuardar) btnGuardar.hidden = true;
     }
 
@@ -169,7 +278,10 @@
       if (btnSumarCorte) btnSumarCorte.hidden = hideEdits;
       if (btnModEstado) btnModEstado.hidden = hideEdits;
 
-      if (btnModPlanchas) btnModPlanchas.hidden = !extras;
+      if (btnModPlanchas) btnModPlanchas.hidden = !extras || hideEdits;
+      if (btnModCodigo) btnModCodigo.hidden = !extras || hideEdits;
+      if (btnModDesc) btnModDesc.hidden = !extras || hideEdits;
+
       if (btnGuardar) btnGuardar.hidden = hideEdits;
 
       lockAllToRO();
@@ -217,8 +329,9 @@
 
     function fill(data) {
       ensureExtrasPlanchasUI();
+      ensureExtrasTextFieldsUI();
 
-      // ✅ Fecha (y cualquier campo date/iso) formateado a DD-MM-YYYY
+      // Fecha y data-det
       modal.querySelectorAll("[data-det]").forEach((el) => {
         const k = el.getAttribute("data-det");
         const v = data?.[k];
@@ -228,10 +341,8 @@
           return;
         }
 
-        // Heurística: si el campo se llama "fecha*" o contiene una fecha ISO, lo formateamos
         const key = String(k || "").toLowerCase();
         const asStr = String(v);
-
         const looksLikeISODate = /^\d{4}-\d{2}-\d{2}/.test(asStr);
         const isFechaKey = key.startsWith("fecha") || key.includes("_fecha") || key.includes("fecha_");
 
@@ -245,6 +356,12 @@
       const estado = (data?.estado || "en_proceso").trim();
 
       isArchived = Number(data?.es_archivado ?? 0) === 1;
+
+      // ✅ Prefill extras texto
+      const codigo = String(data?.codigo_producto ?? "");
+      const desc = String(data?.descripcion_producto ?? "");
+      if (inpCodigo) inpCodigo.value = codigo;
+      if (taDesc) taDesc.value = desc;
 
       if (inpPlanchas) inpPlanchas.value = String(planchas);
 
@@ -355,10 +472,22 @@
 
       const planchasAsignadas = extras && inpPlanchas ? Number(inpPlanchas.value ?? 0) : null;
 
+      // ✅ nuevo: campos extras editables
+      const codigo = extras && inpCodigo ? String(inpCodigo.value || "").trim() : null;
+      const descripcion = extras && taDesc ? String(taDesc.value || "").trim() : null;
+
       if (extras && inpPlanchas) {
         if (!Number.isInteger(planchasAsignadas) || planchasAsignadas <= 0) {
           return setMessage("Planchas asignadas inválidas.", true);
         }
+      }
+
+      // validaciones extras básicas (defensivas)
+      if (extras && inpCodigo) {
+        if (!codigo || codigo.length < 1) return setMessage("Código de producto inválido.", true);
+      }
+      if (extras && taDesc) {
+        if (!descripcion || descripcion.length < 10) return setMessage("Descripción inválida (mínimo 10).", true);
       }
 
       if (!Number.isInteger(ultima) || ultima < 0) return setMessage("Última plancha inválida.", true);
@@ -373,6 +502,8 @@
       };
 
       if (extras && inpPlanchas) body.planchas_asignadas = planchasAsignadas;
+      if (extras && inpCodigo) body.codigo_producto = codigo;
+      if (extras && taDesc) body.descripcion_producto = descripcion;
 
       try {
         const res = await window.KP.API.fetchJSON(`/api/pedidos/${pedidoActualId}/actualizar`, {

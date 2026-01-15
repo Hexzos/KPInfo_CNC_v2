@@ -37,13 +37,11 @@ class ApiPostMixin:
             identificador = (dto.get("identificador") or dto.get("email") or "").strip()
             new_password = dto.get("password") or dto.get("password_nueva") or ""
 
-            # Validación mínima del request (sin filtrar existencia de usuario)
             if not identificador:
                 return send_json(self, 400, err("VALIDATION_ERROR", "Ingrese email o username."))
             if len(new_password or "") < 8:
                 return send_json(self, 400, err("VALIDATION_ERROR", "La contraseña debe tener al menos 8 caracteres."))
 
-            # IP (opcional) para auditoría / UI admin
             origen_ip = None
             try:
                 origen_ip = (self.client_address[0] if getattr(self, "client_address", None) else None)
@@ -54,7 +52,6 @@ class ApiPostMixin:
                 svc = getattr(self, "clave_cambio", None) or ClaveCambioService(self.db)
                 svc.request_change(identificador=identificador, new_password=new_password, origen_ip=origen_ip)
 
-                # Respuesta genérica (no revelar si existe/no existe, ni si rate-limit bloqueó)
                 return send_json(
                     self,
                     200,
@@ -68,7 +65,6 @@ class ApiPostMixin:
                     ),
                 )
             except Exception:
-                # Por seguridad, también devolvemos genérico (no filtrar fallas internas)
                 return send_json(
                     self,
                     200,
@@ -91,7 +87,6 @@ class ApiPostMixin:
             "/api/admin/usuarios/password-change/approve",
             "/api/admin/usuarios/password-change/cancel",
         ):
-            # Requiere admin (Bearer)
             if not self._handle_admin_user_guard():
                 return
 
@@ -107,11 +102,10 @@ class ApiPostMixin:
             except Exception:
                 return send_json(self, 400, err("VALIDATION_ERROR", "usuario_id inválido."))
 
-            # Identificar admin actual para resuelto_por
             try:
                 me = self._require_admin_user()  # type: ignore
             except PermissionError:
-                return  # _require_admin_user ya responde
+                return
 
             admin_id = int(me.get("id") or 0)
             if admin_id <= 0:
@@ -152,7 +146,6 @@ class ApiPostMixin:
 
             svc = getattr(self, "auth", None) or AuthService(self.db)
 
-            # register
             if parsed.path.endswith("/register"):
                 try:
                     svc.register(
@@ -176,7 +169,6 @@ class ApiPostMixin:
                         msg = "Email inválido."
                     return send_json(self, 400, err("VALIDATION_ERROR", msg))
 
-            # login
             if parsed.path.endswith("/login"):
                 try:
                     data = svc.login(dto.get("identificador"), dto.get("password"))
@@ -189,7 +181,6 @@ class ApiPostMixin:
                         return send_json(self, 403, err("AUTH_DENIED", "Usuario desactivado."))
                     return send_json(self, 401, err("AUTH_INVALID", "Credenciales inválidas."))
 
-            # logout
             if parsed.path.endswith("/logout"):
                 token = self._get_bearer_token() if hasattr(self, "_get_bearer_token") else ""
                 if not token:
@@ -215,7 +206,6 @@ class ApiPostMixin:
 
             svc = getattr(self, "admin_usuarios", None) or AdminUsuariosService(self.db)
 
-            # create
             if parsed.path.endswith("/create"):
                 try:
                     uid = svc.crear(
@@ -241,7 +231,6 @@ class ApiPostMixin:
                         msg = "La contraseña debe tener al menos 8 caracteres."
                     return send_json(self, 400, err("VALIDATION_ERROR", msg))
 
-            # update
             if parsed.path.endswith("/update"):
                 try:
                     uid = int(dto.get("id") or 0)
@@ -269,7 +258,6 @@ class ApiPostMixin:
                         msg = "No se puede quitar privilegios al último administrador activo."
                     return send_json(self, 400, err("VALIDATION_ERROR", msg))
 
-            # toggle
             if parsed.path.endswith("/toggle"):
                 try:
                     uid = int(dto.get("id") or 0)
@@ -277,7 +265,6 @@ class ApiPostMixin:
                     if uid <= 0:
                         raise ValueError("NO_EXISTE")
 
-                    # No permitir auto-desactivar (debe hacerlo otro admin)
                     try:
                         me = self._require_admin_user()  # type: ignore
                     except PermissionError:
@@ -321,7 +308,6 @@ class ApiPostMixin:
             catalogo = (dto.get("catalogo") or "").strip().lower()
             svc = CatalogosAdminService(self.db)
 
-            # create
             if parsed.path.endswith("/create"):
                 nombre = (dto.get("nombre") or "").strip()
                 if not catalogo or not nombre:
@@ -345,7 +331,6 @@ class ApiPostMixin:
                 except Exception:
                     return send_json(self, 500, err("DB_ERROR", "Error al crear registro del catálogo."))
 
-            # update
             if parsed.path.endswith("/update"):
                 try:
                     item_id = int(dto.get("id"))
@@ -378,7 +363,6 @@ class ApiPostMixin:
                 except Exception:
                     return send_json(self, 500, err("DB_ERROR", "Error al actualizar registro del catálogo."))
 
-            # delete
             if parsed.path.endswith("/delete"):
                 try:
                     item_id = int(dto.get("id"))
@@ -411,13 +395,8 @@ class ApiPostMixin:
 
         # =========================================================
         # ADMIN: Variaciones por material (tabla puente)
-        # POST /api/admin/variaciones/asignar
-        # POST /api/admin/variaciones/desasignar
         # =========================================================
-        if parsed.path in (
-            "/api/admin/variaciones/asignar",
-            "/api/admin/variaciones/desasignar",
-        ):
+        if parsed.path in ("/api/admin/variaciones/asignar", "/api/admin/variaciones/desasignar"):
             if not self._handle_admin_guard():
                 return
 
@@ -426,7 +405,6 @@ class ApiPostMixin:
             except ValueError as ex:
                 return send_json(self, 400, err("VALIDATION_ERROR", str(ex)))
 
-            # ✅ FIX: aceptar variacion_id como alias de variacion_material_id
             try:
                 tipo_plancha_id = int(dto.get("tipo_plancha_id") or 0)
                 variacion_material_id = int(dto.get("variacion_material_id") or dto.get("variacion_id") or 0)
@@ -446,7 +424,6 @@ class ApiPostMixin:
                             (tipo_plancha_id, variacion_material_id),
                         )
                     except sqlite3.IntegrityError:
-                        # relación ya existe (UNIQUE) o FK inválida
                         pass
                     return send_json(self, 200, ok({"assigned": True}))
 
@@ -464,8 +441,6 @@ class ApiPostMixin:
 
         # =========================================================
         # ADMIN: Purga archivados (requiere extras)
-        # POST /api/admin/purge/pedidos/range | /all
-        # POST /api/admin/purge/anomalias/range | /all
         # =========================================================
         if parsed.path in (
             "/api/admin/purge/pedidos/range",
@@ -556,7 +531,6 @@ class ApiPostMixin:
 
         # =========================================================
         # ADMIN: Rotar clave de extras (requiere extras)
-        # POST /api/admin/extras-key/rotate
         # =========================================================
         if parsed.path == "/api/admin/extras-key/rotate":
             if not self._handle_admin_guard():
@@ -582,13 +556,7 @@ class ApiPostMixin:
 
             try:
                 CONFIG.extra_key = newkey
-                self._extras_audit(
-                    rid_extras,
-                    "ROTATE_EXTRAS_KEY",
-                    "config",
-                    None,
-                    "Rotación de clave extras (runtime).",
-                )
+                self._extras_audit(rid_extras, "ROTATE_EXTRAS_KEY", "config", None, "Rotación de clave extras (runtime).")
                 return send_json(self, 200, ok({"message": "OK"}))
             except Exception:
                 return send_json(self, 500, err("DB_ERROR", "No fue posible actualizar la clave."))
@@ -609,7 +577,6 @@ class ApiPostMixin:
             except Exception:
                 return send_json(self, 400, err("VALIDATION_ERROR", "registro_turno_id inválido."))
 
-            # 1) Admin por Bearer => elevar sin pedir clave
             svc_auth = getattr(self, "auth", None) or AuthService(self.db)
             u = None
             try:
@@ -632,7 +599,6 @@ class ApiPostMixin:
                 except Exception:
                     return send_json(self, 500, err("DB_ERROR", "Error al activar modo extras."))
 
-            # 2) No admin => requiere clave extras explícita
             extras_key = (dto.get("extras_key") or dto.get("key") or "").strip()
             if not extras_key:
                 return send_json(self, 400, err("VALIDATION_ERROR", "Ingrese la clave de extras."))
@@ -663,7 +629,6 @@ class ApiPostMixin:
             if not valid:
                 return send_json(self, 400, err("VALIDATION_ERROR", "Hay campos inválidos.", fields))
 
-            # 1) Determinar admin por Bearer (prioridad)
             svc_auth = getattr(self, "auth", None) or AuthService(self.db)
             u = None
             try:
@@ -673,7 +638,6 @@ class ApiPostMixin:
             except Exception:
                 u = None
 
-            # 2) Fallback técnico (body)
             admin_username = (dto.get("admin_username") or "").strip()
             admin_password = dto.get("admin_password") or ""
             admin_key = (dto.get("admin_key") or "").strip()
@@ -735,6 +699,62 @@ class ApiPostMixin:
                 return send_json(self, 201, ok(data))
             except Exception:
                 return send_json(self, 500, err("DB_ERROR", "Error al crear pedido."))
+
+        # =========================================================
+        # ✅ ARCHIVAR/RESTAURAR (SQL directo, requiere extras)
+        # POST /api/pedidos/<id>/archivar | /restaurar
+        # POST /api/anomalias/<id>/archivar | /restaurar
+        # =========================================================
+        if parsed.path.startswith("/api/pedidos/") or parsed.path.startswith("/api/anomalias/"):
+            is_pedido = parsed.path.startswith("/api/pedidos/")
+            is_anom = parsed.path.startswith("/api/anomalias/")
+
+            if (is_pedido or is_anom) and (parsed.path.endswith("/archivar") or parsed.path.endswith("/restaurar")):
+                base = "/api/pedidos/" if is_pedido else "/api/anomalias/"
+                tail = parsed.path.split(base, 1)[1].strip("/")
+                parts = tail.split("/")
+
+                if len(parts) != 2 or parts[1] not in ("archivar", "restaurar"):
+                    return send_json(self, 404, err("NOT_FOUND", "Endpoint no encontrado."))
+
+                try:
+                    item_id = self._parse_pos_int(parts[0])
+                except ValueError:
+                    return send_json(self, 400, err("VALIDATION_ERROR", "ID inválido."))
+
+                rid_extras = self._handle_extras_guard()
+                if rid_extras is None:
+                    return  # guard ya responde
+
+                tabla = "pedido" if is_pedido else "anomalia"
+                flag = 1 if parts[1] == "archivar" else 0
+
+                try:
+                    exists = self.db.query_one(f"SELECT id FROM {tabla} WHERE id = ?;", (item_id,))
+                    if not exists:
+                        return send_json(self, 404, err("NOT_FOUND", f"{'Pedido' if is_pedido else 'Anomalía'} no encontrada."))
+
+                    self.db.execute(f"UPDATE {tabla} SET es_archivado = ? WHERE id = ?;", (flag, item_id))
+
+                    self._extras_audit(
+                        rid_extras,
+                        "ARCHIVAR" if flag == 1 else "RESTAURAR",
+                        tabla,
+                        item_id,
+                        f"{'Archivado' if flag == 1 else 'Restaurado'} via endpoint.",
+                    )
+
+                    return send_json(self, 200, ok({"id": item_id, "es_archivado": flag}))
+
+                except Exception:
+                    return send_json(
+                        self,
+                        500,
+                        err(
+                            "DB_ERROR",
+                            f"Error al actualizar el estado de archivado de la {'pedido' if is_pedido else 'anomalia'}.",
+                        ),
+                    )
 
         # =========================
         # PEDIDOS: actualizar (extras/operador)
